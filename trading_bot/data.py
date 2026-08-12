@@ -56,3 +56,24 @@ def fetch_intraday(ticker: str, interval: str = "5m", period: str | None = None,
 
     raw.to_csv(cache_path)
     return raw
+
+
+def fetch_daily(ticker: str, period: str = "1y", use_cache: bool = True) -> pd.DataFrame:
+    """Fetch daily OHLCV bars for `ticker` (for swing/screening use, not intraday)."""
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(CACHE_DIR, f"{ticker}_1d_{period}.csv")
+
+    if use_cache and os.path.exists(cache_path):
+        return pd.read_csv(cache_path, index_col=0, parse_dates=True)
+
+    raw = yf.download(ticker, interval="1d", period=period, progress=False, auto_adjust=True)
+    if raw.empty:
+        raise RuntimeError(f"no data returned for {ticker} (1d, {period})")
+
+    if isinstance(raw.columns, pd.MultiIndex):
+        raw.columns = raw.columns.get_level_values(0)
+    raw.columns = [c.lower() for c in raw.columns]
+    raw = raw[["open", "high", "low", "close", "volume"]]
+
+    raw.to_csv(cache_path)
+    return raw
