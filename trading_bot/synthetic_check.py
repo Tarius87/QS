@@ -22,8 +22,8 @@ BARS_PER_DAY = 78  # 6.5h session at 5-minute bars
 SEED = 7
 
 
-def make_random_walk_days(n_days: int = 60, start_price: float = 400.0, bar_vol: float = 0.0007) -> pd.DataFrame:
-    rng = np.random.default_rng(SEED)
+def make_random_walk_days(n_days: int = 60, start_price: float = 400.0, bar_vol: float = 0.0007, seed: int = SEED) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
     frames = []
     price = start_price
 
@@ -52,20 +52,47 @@ def make_random_walk_days(n_days: int = 60, start_price: float = 400.0, bar_vol:
     return pd.concat(frames)
 
 
-def main():
-    df = make_random_walk_days()
-    print(f"Synthetic random-walk data: {len(df)} bars across "
-          f"{df.index.normalize().nunique()} sessions (seed={SEED})")
-    print("NOTE: price process is random noise — this checks plumbing only, not trading edge.\n")
-
+def run_one(seed: int, n_days: int = 60) -> dict:
+    df = make_random_walk_days(n_days=n_days, seed=seed)
     strat_params = ORBParams(opening_range_minutes=15, take_profit_r=2.0, direction="both")
     trades = generate_trades(df, strat_params)
-
     risk_params = RiskParams(starting_equity=25_000.0, risk_per_trade_pct=0.005, max_daily_loss_pct=0.02)
     results, equity_curve = run_backtest(trades, risk_params)
+    return compute_metrics(results, equity_curve, risk_params.starting_equity)
 
-    metrics = compute_metrics(results, equity_curve, risk_params.starting_equity)
-    print(format_metrics(metrics))
+
+def main(n_seeds: int = 20, n_days: int = 60):
+    print(f"Running ORB pipeline against {n_seeds} independent random-walk price series "
+          f"({n_days} sessions each).")
+    print("NOTE: price process is random noise in every run — this establishes what a "
+          "NO-EDGE strategy looks like on this backtest engine, not a prediction of real "
+          "performance. It is a noise floor to compare real results against, and a plumbing check.\n")
+
+    rows = []
+    for seed in range(n_seeds):
+        m = run_one(seed, n_days=n_days)
+        if m.get("trades", 0) > 0:
+            rows.append(m)
+
+    returns = np.array([m["total_return_pct"] for m in rows])
+    pfs = np.array([m["profit_factor"] for m in rows if np.isfinite(m["profit_factor"])])
+    sharpes = np.array([m["sharpe_annualized"] for m in rows])
+    win_rates = np.array([m["win_rate"] for m in rows])
+    drawdowns = np.array([m["max_drawdown_pct"] for m in rows])
+
+    print(f"Seeds with trades: {len(rows)}/{n_seeds}\n")
+    print(f"{'metric':<20}{'mean':>10}{'std':>10}{'min':>10}{'max':>10}")
+    for name, arr in [
+        ("total_return_pct", returns),
+        ("profit_factor", pfs),
+        ("sharpe_annualized", sharpes),
+        ("win_rate", win_rates),
+        ("max_drawdown_pct", drawdowns),
+    ]:
+        print(f"{name:<20}{arr.mean():>10.2f}{arr.std():>10.2f}{arr.min():>10.2f}{arr.max():>10.2f}")
+
+    print(f"\nFraction of noise runs with positive return: {(returns > 0).mean():.0%}")
+    print("If a real-data backtest doesn't clearly beat this range, treat it as noise, not edge.")
 
 
 if __name__ == "__main__":
