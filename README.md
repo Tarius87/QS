@@ -10,17 +10,46 @@ strategy and backtest engine, and [`docs/mcp-servers.md`](docs/mcp-servers.md)
 for the (not yet live) Robinhood trading MCP server this is meant to
 eventually connect to.
 
-**Status: backtest only — no live or paper order placement yet.** Nothing in
-this repo places real trades. The intent is: prove out a strategy on
-historical data first, then add paper trading, then live trading behind hard
-risk limits (see `trading_bot/backtest.py` for the position sizing / daily
-loss circuit breaker already in place).
+**Status: no real order has ever been placed. Nothing in this repo trades
+with real money yet.** The strategy has not been validated against real
+market data either — the only run so far was against random noise
+(`trading_bot/synthetic_check.py`), which is a plumbing check, not evidence
+of edge.
 
 ```
 pip install -r trading_bot/requirements.txt
 python -m trading_bot.cli --ticker SPY --interval 5m --range-minutes 15
 python -m pytest trading_bot/tests   # synthetic-data unit tests, no network needed
 ```
+
+### Live execution scaffolding (`trading_bot/live/`)
+
+Built in anticipation of live trading, but **cannot place a real order
+today** — there is no broker connected. Specifically:
+
+- `broker.py` — a `Broker` interface and a `DryRunBroker` that logs orders
+  instead of sending them. **No real broker implementation exists.** A
+  `RobinhoodBroker` would need to be written against the actual MCP tool,
+  once one is connected to a session and its endpoint verified as
+  authentic (see `docs/mcp-servers.md` — still unresolved).
+- `risk_guard.py` — hard, fixed-dollar caps independent of the backtest's
+  percent-of-equity sizing, since the strategy is unvalidated: a max
+  dollars per position, a max-dollar daily-loss kill switch, and a max
+  trades/day. These are non-negotiable gates a proposed trade must pass
+  before the executor ever calls the broker.
+- `executor.py` — `LiveExecutor` streams one bar at a time, tracks the
+  opening range, and decides enter/hold/exit, routing every entry through
+  `RiskGuard` first. Defaults to `DryRunBroker`.
+
+What's still missing before this can trade real money:
+1. A verified, connected Robinhood (or other) broker implementation of `Broker`
+2. A live intraday data feed to call `LiveExecutor.on_bar` with (this
+   sandbox can't reach any market data provider — see below)
+3. A human decision on the actual dollar values in `LiveRiskLimits` —
+   the defaults (`$100`/trade, `$150`/day, 3 trades/day) are placeholders,
+   not a recommendation
+4. Ideally, real backtest results first — this was explicitly skipped per
+   user instruction, not because it doesn't matter
 
 ## Signals digest (Congress / Buffett / AI screener)
 
