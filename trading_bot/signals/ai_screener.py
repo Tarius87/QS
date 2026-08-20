@@ -1,6 +1,7 @@
-"""Quantitative screen for "promising" AI-sector stocks, over a fixed
-watchlist rather than open-ended discovery (there's no free, reliable feed
-of brand-new AI listings). Signal-only: never places orders.
+"""Quantitative momentum screen over a fixed watchlist (originally AI-sector
+names, now also a few steady non-AI compounders -- see WATCHLIST) rather
+than open-ended discovery (there's no free, reliable feed of brand-new
+listings to draw from). Signal-only: never places orders.
 
 Criteria (all rules-based, no news/sentiment judgment calls):
   - near_52w_high: close within `high_proximity_pct` of the trailing
@@ -23,6 +24,12 @@ WATCHLIST = [
     "NVDA", "AMD", "MSFT", "GOOGL", "META", "AVGO", "TSM", "SMCI", "PLTR",
     "AI", "SOUN", "BBAI", "IONQ", "ARM", "CRWD", "MRVL", "DELL", "ORCL",
     "ADBE", "NOW", "PANW",
+    # Steady 5-year compounders (added for trend diversity, non-AI): selected
+    # by fitting a line to 5y log(price) and ranking by R^2 (how smooth/
+    # consistent the climb is, not just total return). As of 2026-08-20:
+    # TJX 0.94, LLY 0.90, WMT 0.89, CAT 0.85, V 0.85 -- all still cleared
+    # 252-session-high/volume/momentum screening on their own merits.
+    "TJX", "LLY", "WMT", "CAT", "V",
 ]
 
 
