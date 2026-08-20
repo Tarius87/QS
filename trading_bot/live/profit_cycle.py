@@ -1,0 +1,128 @@
+"""Buy-and-hold profit-cycle manager.
+
+Rule: buy a fixed dollar amount of `ticker`; once the position is up
+`profit_take_pct`, sell the whole thing; split the realized profit into a
+"kept" portion (left as cash -- there is no deposit/withdrawal/transfer
+tool available, see docs/live-trading-status.md, so "kept" money is never
+moved anywhere, just left uninvested for the user to deal with manually)
+and a "reinvest" portion used to buy a different ticker; then immediately
+re-buy the original ticker with fresh principal to start the next cycle.
+
+Broker-agnostic (works against any `Broker`, see broker.py). Defaults to
+DryRunBroker -- nothing here sends a real order on its own.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Callable
+
+from .broker import Broker, DryRunBroker
+
+
+@dataclass
+class ProfitCycleParams:
+    ticker: str = "SPY"
+    principal_dollars: float = 100.0
+    profit_take_pct: float = 0.10
+    reinvest_fraction: float = 0.5   # of realized profit; remainder is kept as cash
+    max_principal_dollars: float = 200.0        # hard sanity ceiling on principal_dollars
+    max_total_reinvested_dollars: float = 500.0  # hard ceiling on cumulative reinvested capital
+
+
+@dataclass
+class CyclePosition:
+    ticker: str
+    shares: float
+    cost_basis: float  # total dollars paid
+
+
+@dataclass
+class ProfitCycleManager:
+    params: ProfitCycleParams
+    broker: Broker = field(default_factory=DryRunBroker)
+    reinvest_ticker_picker: Callable[[], str | None] | None = None
+    position: CyclePosition | None = field(default=None, init=False)
+    reinvested_positions: list[CyclePosition] = field(default_factory=list, init=False)
+    kept_cash: float = field(default=0.0, init=False)
+
+    def __post_init__(self):
+        if self.params.principal_dollars > self.params.max_principal_dollars:
+            raise ValueError(
+                f"principal_dollars ${self.params.principal_dollars:.2f} exceeds hard ceiling "
+                f"${self.params.max_principal_dollars:.2f}"
+            )
+
+    def on_price(self, timestamp: datetime, price: float) -> str:
+        """Feed the latest price for `params.ticker`. Returns a short log line."""
+        if self.position is None:
+            return self._enter(price)
+        return self._maybe_take_profit(price)
+
+    def _enter(self, price: float) -> str:
+        shares = self.params.principal_dollars / price
+        result = self.broker.place_order(self.params.ticker, "buy", shares)
+        if not result.accepted:
+            return f"buy rejected: {result.reason}"
+        self.position = CyclePosition(self.params.ticker, shares, self.params.principal_dollars)
+        return f"bought {shares:.4f} {self.params.ticker} @ {price:.2f} (${self.params.principal_dollars:.2f})"
+
+    def _maybe_take_profit(self, price: float) -> str:
+        pos = self.position
+        current_value = pos.shares * price
+        gain_pct = (current_value - pos.cost_basis) / pos.cost_basis
+        if gain_pct < self.params.profit_take_pct:
+            return f"holding {pos.ticker}: {gain_pct:+.2%} (target {self.params.profit_take_pct:.0%})"
+
+        result = self.broker.place_order(pos.ticker, "sell", pos.shares)
+        if not result.accepted:
+            return f"sell rejected: {result.reason}"
+
+        proceeds = current_value
+        profit = proceeds - pos.cost_basis
+        reinvest_amount = profit * self.params.reinvest_fraction
+        kept_amount = profit - reinvest_amount
+        self.kept_cash += kept_amount
+        self.position = None
+
+        reinvest_note = self._reinvest(reinvest_amount, price)
+        entry_note = self._enter(price)  # next cycle starts immediately with fresh principal
+        return (
+            f"sold {pos.ticker} @ {price:.2f} for ${proceeds:.2f} (profit ${profit:.2f}); "
+            f"kept ${kept_amount:.2f}{reinvest_note}; next cycle: {entry_note}"
+        )
+
+    def _reinvest(self, reinvest_amount: float, price: float) -> str:
+        if reinvest_amount <= 0:
+            return ""
+
+        already_deployed = sum(p.cost_basis for p in self.reinvested_positions)
+        if already_deployed + reinvest_amount > self.params.max_total_reinvested_dollars:
+            self.kept_cash += reinvest_amount
+            return f", reinvest cap (${self.params.max_total_reinvested_dollars:.2f}) reached -- ${reinvest_amount:.2f} kept as cash instead"
+
+        ticker = self._pick_reinvest_ticker()
+        if not ticker:
+            self.kept_cash += reinvest_amount
+            return f", no reinvest ticker available -- ${reinvest_amount:.2f} kept as cash instead"
+
+        # Reinvest ticker's own price is unknown here (picker returns a symbol,
+        # not a quote); approximate using the just-sold ticker's price as a
+        # rough share count -- real integration should fetch the actual quote.
+        shares = reinvest_amount / price
+        result = self.broker.place_order(ticker, "buy", shares)
+        if not result.accepted:
+            self.kept_cash += reinvest_amount
+            return f", reinvest buy failed ({result.reason}) -- ${reinvest_amount:.2f} kept as cash instead"
+
+        self.reinvested_positions.append(CyclePosition(ticker, shares, reinvest_amount))
+        return f", reinvested ${reinvest_amount:.2f} into {ticker}"
+
+    def _pick_reinvest_ticker(self) -> str | None:
+        if self.reinvest_ticker_picker is None:
+            return None
+        try:
+            return self.reinvest_ticker_picker()
+        except Exception:
+            return None
