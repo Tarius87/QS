@@ -43,9 +43,11 @@ class ProfitCycleManager:
     params: ProfitCycleParams
     broker: Broker = field(default_factory=DryRunBroker)
     reinvest_ticker_picker: Callable[[], str | None] | None = None
+    principal_ticker_picker: Callable[[], str | None] | None = None
     position: CyclePosition | None = field(default=None, init=False)
     reinvested_positions: list[CyclePosition] = field(default_factory=list, init=False)
     kept_cash: float = field(default=0.0, init=False)
+    _pending_ticker: str | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         if self.params.principal_dollars > self.params.max_principal_dollars:
@@ -54,9 +56,34 @@ class ProfitCycleManager:
                 f"${self.params.max_principal_dollars:.2f}"
             )
 
+    def next_ticker(self) -> str:
+        """Which ticker `on_price` expects a quote for right now -- call this
+        before fetching a quote so you know what to fetch a quote FOR.
+        While a position is open, that's always the held ticker. Between
+        cycles, if `principal_ticker_picker` is set, it's asked for a fresh
+        pick once and cached (falling back to `params.ticker` if it returns
+        nothing or raises) so repeated calls -- including the internal one
+        `on_price` makes -- can't disagree with each other or re-trigger a
+        non-idempotent picker (e.g. a live screener call) twice."""
+        if self.position is not None:
+            return self.position.ticker
+        if self._pending_ticker is not None:
+            return self._pending_ticker
+
+        picked = None
+        if self.principal_ticker_picker is not None:
+            try:
+                picked = self.principal_ticker_picker()
+            except Exception:
+                picked = None
+        self._pending_ticker = picked or self.params.ticker
+        return self._pending_ticker
+
     def on_price(self, timestamp: datetime, price: float) -> str:
-        """Feed the latest price for `params.ticker`. Returns a short log line."""
+        """Feed the latest price for whatever `next_ticker()` currently returns."""
         if self.position is None:
+            self.params.ticker = self.next_ticker()
+            self._pending_ticker = None  # consumed -- next cycle resolves fresh
             return self._enter(price)
         return self._maybe_take_profit(price)
 
@@ -87,7 +114,14 @@ class ProfitCycleManager:
         self.position = None
 
         reinvest_note = self._reinvest(reinvest_amount, price)
-        entry_note = self._enter(price)  # next cycle starts immediately with fresh principal
+
+        # Next cycle starts immediately with fresh principal. If a ticker
+        # picker is set, re-resolve it now that the position is flat -- reuses
+        # the just-sold ticker's price as an approximation for the new pick's
+        # share count (see _reinvest's docstring note; same known limitation).
+        self.params.ticker = self.next_ticker()
+        self._pending_ticker = None
+        entry_note = self._enter(price)
         return (
             f"sold {pos.ticker} @ {price:.2f} for ${proceeds:.2f} (profit ${profit:.2f}); "
             f"kept ${kept_amount:.2f}{reinvest_note}; next cycle: {entry_note}"

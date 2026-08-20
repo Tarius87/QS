@@ -86,3 +86,12 @@ def screen_watchlist(tickers: list[str] | None = None, params: ScreenParams | No
             rows.append({"ticker": ticker, **result})
 
     return pd.DataFrame(rows).sort_values("momentum_pct", ascending=False) if rows else pd.DataFrame()
+
+
+def top_pick(tickers: list[str] | None = None, params: ScreenParams | None = None) -> str | None:
+    """Convenience wrapper: the single highest-momentum ticker passing all
+    screen criteria, or None if nothing currently qualifies."""
+    results = screen_watchlist(tickers, params)
+    if results.empty:
+        return None
+    return results.iloc[0]["ticker"]

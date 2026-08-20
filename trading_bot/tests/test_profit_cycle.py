@@ -70,6 +70,31 @@ def test_reinvest_cap_falls_back_to_cash():
     assert mgr.kept_cash == 10.0
 
 
+def test_principal_ticker_picker_used_for_entry():
+    picks = iter(["NVDA", "AMD"])  # a different pick each cycle
+    mgr = ProfitCycleManager(
+        ProfitCycleParams(ticker="SPY", principal_dollars=100.0, profit_take_pct=0.10),
+        broker=DryRunBroker(),
+        principal_ticker_picker=lambda: next(picks, None),
+    )
+    assert mgr.next_ticker() == "NVDA"
+    result = mgr.on_price(NOW, 100.0)
+    assert "NVDA" in result
+    assert mgr.position.ticker == "NVDA"
+
+    mgr.on_price(NOW, 110.0)  # take profit, re-enter with the next pick
+    assert mgr.position.ticker == "AMD"
+
+
+def test_principal_ticker_picker_falls_back_when_exhausted():
+    mgr = ProfitCycleManager(
+        ProfitCycleParams(ticker="SPY", principal_dollars=100.0),
+        broker=DryRunBroker(),
+        principal_ticker_picker=lambda: None,
+    )
+    assert mgr.next_ticker() == "SPY"
+
+
 def test_principal_over_hard_ceiling_raises():
     try:
         ProfitCycleManager(ProfitCycleParams(principal_dollars=1000.0, max_principal_dollars=200.0))
