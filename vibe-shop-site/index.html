@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vibe Shop Class: build real things with AI</title>
+    <meta name="description" content="Websites, apps, stores, books and systems. You bring the idea, Claude does the heavy lifting. Short, plain-word lessons from idea to done." />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/png" href="vsc-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://vibeshopclass.com/" />
+    <meta property="og:title" content="Vibe Shop Class: build real things with AI" />
+    <meta property="og:description" content="Websites, apps, stores, books and systems. You bring the idea, Claude does the heavy lifting. Every lesson is the shortest path from idea to done." />
+    <meta property="og:image" content="https://vibeshopclass.com/thumb_ep1.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vibe Shop Class: build real things with AI" />
+    <meta name="twitter:description" content="Websites, apps, stores, books and systems, built with Claude. No code required." />
+    <meta name="twitter:image" content="https://vibeshopclass.com/thumb_ep1.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Caveat:wght@700&display=swap" />
+    <style>
+      /* Vibe Shop Class · "Circuit"
+         Shape: the cut corner (45°), taken from the circuit traces in the logo art.
+         Motion: live circuit boards with signals running along the traces; a trace wires the tab you pick
+         to the section it opens; highlighted words decode like data.
+         Balance on every tab: ~60% white/cream, ~30% teal (the board), ~10% peach. */
+      :root {
+        --ink: #0b2a30; --ink-2: #3f5f63; --deep: #071a1f; --board: #133a40;
+        --teal: #2fb3a8; --teal-b: #3ad1c5; --teal-ink: #0a7a72; --teal-wash: #e3f6f4;
+        --peach: #f4906b; --peach-l: #ffb38a; --peach-ink: #b84a22; --peach-wash: #ffefe6;
+        --cream: #fff7ef; --white: #fff;
+        --sans: "Poppins", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+        --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --hand: "Caveat", "Bradley Hand", cursive;
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --head-h: 68px; --foot-h: 60px; --gut: clamp(16px, 4vw, 40px); --cut: 12px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body { font: 400 16px/1.55 var(--sans); color: var(--ink); background: var(--white); overflow: hidden; -webkit-font-smoothing: antialiased; }
+      img { max-width: 100%; display: block; }
+      button { font: inherit; }
+      :focus-visible { outline: 3px solid var(--peach); outline-offset: -3px; }
+      .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .cut-1 { clip-path: polygon(0 0, calc(100% - var(--c1, 26px)) 0, 100% var(--c1, 26px), 100% 100%, 0 100%); }
+
+      /* ---------- shell ---------- */
+      .app { height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--head-h) minmax(0, 1fr) var(--foot-h); }
+      .head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; padding: 0 var(--gut); background: var(--white); border-bottom: 2px solid var(--ink); }
+      .head__logo { flex: none; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+      .head__logo img { width: 44px; height: 44px; padding: 5px; object-fit: contain; background: var(--board); clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+      .head__word { font-weight: 800; font-size: 15px; line-height: 1; text-transform: uppercase; letter-spacing: 0.02em; }
+      .head__word span { display: block; font: 700 19px/1 var(--hand); color: var(--peach-ink); text-transform: none; letter-spacing: 0; }
+      .tabs { position: relative; display: flex; margin-left: auto; }
+      .tab { position: relative; z-index: 1; appearance: none; border: 0; background: none; cursor: pointer; padding: 10px 16px; color: var(--ink-2); font-weight: 600; font-size: 14px; white-space: nowrap; transition: color 0.3s ease; }
+      .tab b { font: 700 11px var(--mono); margin-right: 6px; color: var(--peach-ink); transition: color 0.3s; }
+      .tab:hover { color: var(--ink); }
+      .tab[aria-selected="true"] { color: var(--white); }
+      .tab[aria-selected="true"] b { color: var(--peach-l); }
+      .tabs__mark { position: absolute; z-index: 0; top: 2px; bottom: 2px; left: 0; width: 0; background: var(--ink); clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: transform 0.55s var(--ease), width 0.55s var(--ease); }
+      .tabs__mark::after { content: ""; position: absolute; right: 0; top: 0; width: 10px; height: 10px; background: var(--peach); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+      .head__progress { position: absolute; left: 0; bottom: -2px; height: 2px; width: 100%; transform-origin: left; background: var(--teal-b); transform: scaleX(0); transition: transform 0.7s var(--ease); }
+
+      /* ---------- the wire: tab -> section ---------- */
+      .wire { position: fixed; inset: 0; z-index: 4; width: 100%; height: 100%; pointer-events: none; overflow: visible; transition: opacity 0.3s; }
+      .wire.is-hidden { opacity: 0; }
+      .wire path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .wire__line { stroke: var(--teal-ink); stroke-width: 2; stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0.55; }
+      .wire__sig { stroke: var(--peach); stroke-width: 4; stroke-dasharray: 8 200; stroke-dashoffset: 8; }
+      .wire circle { fill: var(--white); stroke: var(--teal-ink); stroke-width: 2; opacity: 0; transition: opacity 0.3s; }
+      .wire.go .wire__line { animation: draw 0.7s var(--ease) forwards; }
+      .wire.go .wire__sig { animation: sig 0.6s linear 0.55s forwards; }
+      .wire.go circle { opacity: 1; }
+      .wire.go .wire__b { animation: flash 0.5s ease-out 1.1s both; }
+      @keyframes draw { to { stroke-dashoffset: 0; } }
+      @keyframes sig { to { stroke-dashoffset: -100; } }
+      @keyframes flash { 0% { fill: var(--peach); r: 9; } 100% { fill: var(--white); r: 5; } }
+
+      /* ---------- stage + panels ---------- */
+      .stage { position: relative; overflow: hidden; }
+      .panel {
+        position: absolute; inset: 0; z-index: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; background: var(--bg, var(--white));
+        padding: clamp(24px, 5vh, 56px) var(--gut); display: grid; grid-template-columns: minmax(0, 1fr); align-content: center;
+        visibility: hidden; opacity: 0; transform: translateX(calc(var(--dir, 1) * 50px));
+        transition: opacity 0.4s var(--ease), transform 0.6s var(--ease), visibility 0s linear 0.6s;
+      }
+      .panel.is-on { visibility: visible; opacity: 1; transform: none; transition: opacity 0.45s var(--ease) 0.1s, transform 0.6s var(--ease) 0.1s, visibility 0s; }
+      .panel.is-off { transform: translateX(calc(var(--dir, 1) * -50px)); }
+      #vibe { --bg: var(--cream); }
+      .wrap { position: relative; z-index: 2; width: 100%; max-width: 1180px; margin: 0 auto; }
+      .rise { opacity: 0; transform: translateY(16px); transition: opacity 0.5s var(--ease), transform 0.7s var(--ease); transition-delay: calc(0.2s + var(--d, 0) * 0.07s); }
+      .panel.is-on .rise { opacity: 1; transform: none; }
+
+      /* ---------- circuit boards: ~30% of each tab ---------- */
+      .board { position: absolute; z-index: 0; background: var(--board); overflow: hidden; --k: 44px; }
+      .board--r { clip-path: polygon(var(--k) 0, 100% 0, 100% 100%, 0 100%, 0 var(--k)); }
+      .board--l { clip-path: polygon(0 0, calc(100% - var(--k)) 0, 100% var(--k), 100% 100%, 0 100%); }
+      .board--b { clip-path: polygon(var(--k) 0, calc(100% - var(--k)) 0, 100% var(--k), 100% 100%, 0 100%, 0 var(--k)); }
+      .board::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgb(58 209 197 / 0.16) 1.2px, transparent 1.5px) 0 0 / 17px 17px; }
+      .board svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .board .tr { fill: none; stroke: rgb(58 209 197 / 0.38); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1.4s var(--ease); transition-delay: calc(0.2s + var(--o, 0) * 0.04s); }
+      .board .tr--p { stroke: rgb(244 144 107 / 0.45); }
+      .panel.is-on .board .tr { stroke-dashoffset: 0; }
+      .board .sig { fill: none; stroke: var(--teal-b); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 7 200; stroke-dashoffset: 7; animation: sig var(--t, 4s) linear var(--dl, 0s) infinite; }
+      .board .sig--p { stroke: var(--peach); }
+      .board .nd { fill: var(--board); stroke: rgb(58 209 197 / 0.7); stroke-width: 1.6; animation: node var(--t, 4s) linear var(--dl, 0s) infinite; }
+      .board .nd--p { stroke: rgb(244 144 107 / 0.8); }
+      @keyframes node { 0%, 90% { fill: var(--board); } 94% { fill: var(--teal-b); } 100% { fill: var(--board); } }
+      .board .nd--p { animation-name: node-p; }
+      @keyframes node-p { 0%, 90% { fill: var(--board); } 94% { fill: var(--peach); } 100% { fill: var(--board); } }
+      .on-board { color: #fff; }
+
+      /* ---------- type ---------- */
+      .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; font: 700 12px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-ink); }
+      .eyebrow::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--white); box-shadow: inset 0 0 0 2px var(--teal-ink); transition: background 0.3s, box-shadow 0.3s; }
+      .panel.is-on .eyebrow::before { animation: lit 0.6s ease-out 1.1s both; }
+      @keyframes lit { 0% { background: var(--peach); box-shadow: inset 0 0 0 2px var(--peach), 0 0 0 6px rgb(244 144 107 / 0.35); } 100% { background: var(--peach); box-shadow: inset 0 0 0 2px var(--peach), 0 0 0 0 rgb(244 144 107 / 0); } }
+      .display { margin: 0; font: 800 clamp(44px, 7.6vw, 98px)/0.94 var(--sans); text-transform: uppercase; letter-spacing: -0.02em; }
+      .h2 { margin: 0 0 12px; font: 800 clamp(28px, 4.2vw, 48px)/1.04 var(--sans); text-transform: uppercase; text-wrap: balance; letter-spacing: -0.01em; }
+      .hl { position: relative; z-index: 0; white-space: nowrap; }
+      .hl::before { content: ""; position: absolute; z-index: -1; left: -0.08em; right: -0.08em; bottom: 0.1em; height: 0.34em; background: var(--hl, var(--teal-b)); transform: scaleX(0) skewX(-12deg); transform-origin: left; transition: transform 0.6s var(--ease) 0.9s; }
+      .panel.is-on .hl::before { transform: scaleX(1) skewX(-12deg); }
+      .hl--peach { --hl: var(--peach-l); }
+      .hand { margin: 8px 0 0; font: 700 clamp(28px, 4vw, 44px)/1 var(--hand); color: var(--peach-ink); transform: rotate(-3deg); transform-origin: left; }
+      .lede { margin: 16px 0 0; font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-2); max-width: 52ch; }
+      .cycle { display: inline-block; color: var(--peach); min-width: 1ch; border-right: 0.08em solid var(--ink); padding-right: 0.04em; animation: caret 1s steps(1) infinite; }
+      @keyframes caret { 50% { border-color: transparent; } }
+
+      /* ---------- buttons (cut corner, a signal runs along the bottom on hover) ---------- */
+      .btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+      .btn {
+        --cut: 12px; position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        min-height: 50px; padding: 0 26px; cursor: pointer; text-decoration: none; border: 0; font-weight: 700; font-size: 15px; background: var(--peach); color: var(--deep);
+        clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+        box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.14); transition: background 0.2s ease, transform 0.25s var(--ease);
+      }
+      .btn::after { content: ""; position: absolute; left: -40px; bottom: 0; width: 34px; height: 4px; background: var(--white); }
+      .btn:hover { background: var(--peach-l); transform: translateY(-2px); }
+      .btn:hover::after { animation: run 0.7s linear; }
+      @keyframes run { to { left: calc(100% + 10px); } }
+      .btn:active { transform: translateY(1px); }
+      .btn--ink { background: var(--ink); color: #fff; } .btn--ink:hover { background: var(--deep); }
+      .btn--line { background: rgb(11 42 48 / 0.08); color: var(--ink); box-shadow: inset 0 -4px 0 rgb(11 42 48 / 0.12); }
+      .btn--line:hover { background: rgb(11 42 48 / 0.15); }
+      .btn--line::after { background: var(--teal-ink); }
+      .btn svg { flex: none; }
+      .proof { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; padding: 0; list-style: none; font: 700 12px var(--mono); }
+      .proof li { --cut: 8px; padding: 6px 12px; background: var(--teal-wash); color: var(--ink); clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+      .proof li:nth-child(2) { background: var(--peach-wash); }
+      .proof b { font: 800 15px var(--sans); margin-right: 3px; }
+
+      /* ---------- video ---------- */
+      .frame { position: relative; }
+      .frame::before { content: ""; position: absolute; inset: 16px -16px -16px 16px; background: var(--frame, var(--peach)); clip-path: polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px); transition: transform 0.5s var(--ease); }
+      .frame:hover::before { transform: translate(4px, 4px); }
+      .video { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--deep); clip-path: polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px); }
+      .video img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease); }
+      .video:hover img { transform: scale(1.04); }
+      .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      .video__soon { position: absolute; left: 0; bottom: 0; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 30px; background: var(--peach); color: var(--deep); font: 700 11px var(--mono); clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 0 100%); }
+      .play { position: absolute; inset: 0; margin: auto; width: 78px; height: 78px; border: 0; cursor: pointer; display: grid; place-items: center; background: var(--peach); color: var(--deep); clip-path: polygon(30% 0, 100% 0, 100% 70%, 70% 100%, 0 100%, 0 30%); transition: transform 0.3s var(--ease), background 0.2s; }
+      .play:hover { transform: scale(1.08); background: var(--peach-l); }
+
+      /* ---------- 01 start ---------- */
+      .hero { display: grid; gap: clamp(28px, 5vw, 72px); align-items: center; grid-template-columns: 1.05fr 1fr; }
+      .hero > *, .split > *, .lesson > *, .join > * { min-width: 0; }
+      .hero__media { position: relative; }
+      .sticker { position: absolute; z-index: 3; top: -34px; right: -10px; width: 112px; height: 112px; display: grid; place-items: center; text-align: center; background: var(--teal-b); color: var(--deep); font: 700 11px/1.15 var(--mono); text-transform: uppercase; clip-path: polygon(30% 0, 100% 0, 100% 70%, 70% 100%, 0 100%, 0 30%); transform: rotate(10deg); animation: wobble 5s ease-in-out infinite; }
+      .sticker b { display: block; font: 800 26px var(--sans); }
+      @keyframes wobble { 50% { transform: rotate(-4deg) scale(1.05); } }
+      .hero__note { margin: 0 0 18px 6px; font: 700 28px/1 var(--hand); color: var(--peach-l); transform: rotate(-4deg); }
+      #start .board { top: 0; right: 0; bottom: 70px; width: 44%; }
+      .ticker { position: relative; z-index: 3; margin: clamp(26px, 5vh, 46px) calc(-1 * var(--gut)) 0; overflow: hidden; background: var(--teal-b); color: var(--deep); transform: rotate(-1.5deg); padding: 11px 0; }
+      .ticker__row { display: flex; width: max-content; animation: tick 30s linear infinite; }
+      .ticker span { display: inline-flex; align-items: center; gap: 22px; padding-right: 22px; font: 700 16px var(--mono); text-transform: uppercase; white-space: nowrap; }
+      .ticker i { width: 10px; height: 10px; border-radius: 50%; background: var(--deep); box-shadow: 0 0 0 3px rgb(7 26 31 / 0.2); }
+      .ticker span:nth-child(even) i { background: var(--peach-ink); }
+      @keyframes tick { to { transform: translateX(-50%); } }
+
+      /* ---------- 02 vibe ---------- */
+      .split { display: grid; gap: clamp(24px, 4vw, 64px); grid-template-columns: 1fr 1.05fr; align-items: center; }
+      #vibe .board { top: 0; right: 0; bottom: 0; width: 50%; }
+      .steps { position: relative; list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 14px; }
+      .steps::before { content: ""; position: absolute; left: 26px; top: 26px; bottom: 26px; width: 2px; background: var(--teal); }
+      .steps::after { content: ""; position: absolute; left: 24px; top: 26px; width: 6px; height: 14px; background: var(--peach); border-radius: 3px; opacity: 0; }
+      .panel.is-on .steps::after { animation: down 2.6s linear 0.8s infinite; }
+      @keyframes down { 0% { opacity: 1; top: 26px; } 85% { opacity: 1; top: calc(100% - 40px); } 100% { opacity: 0; top: calc(100% - 40px); } }
+      .steps li { position: relative; display: grid; grid-template-columns: 54px 1fr; gap: 14px; align-items: start; }
+      .steps__n { --cut: 10px; position: relative; z-index: 1; display: grid; place-items: center; height: 54px; font: 700 17px var(--mono); color: #fff; background: var(--ink); clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+      .steps li:nth-child(2) .steps__n { background: var(--peach); color: var(--deep); }
+      .steps li:nth-child(3) .steps__n { background: var(--teal); color: var(--deep); }
+      .steps h3 { margin: 4px 0 2px; font-size: 17px; }
+      .steps p { margin: 0; color: var(--ink-2); font-size: 14px; }
+      .tip { margin-top: 20px; padding: 14px 18px; background: #fff3c9; font-size: 14px; color: var(--ink-2); --c1: 18px; }
+      .tip strong { display: block; font: 700 25px/1.1 var(--hand); color: var(--peach-ink); }
+      .demo-wrap { filter: drop-shadow(12px 12px 0 var(--peach)); }
+      .demo { --c1: 30px; background: var(--teal-b); padding: 2px; }
+      .demo__in { --c1: 29px; background: var(--white); color: var(--ink); }
+      .demo__bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: var(--ink); color: #fff; font: 700 11px var(--mono); }
+      .demo__bar i { width: 10px; height: 10px; background: var(--peach); } .demo__bar i:nth-child(2) { background: #ffd66b; } .demo__bar i:nth-child(3) { background: var(--teal-b); }
+      .demo__bar span { margin-left: 8px; opacity: 0.8; }
+      .demo__body { position: relative; display: grid; grid-template-columns: 1fr 1.1fr; gap: 26px; padding: 16px; min-height: 240px; }
+      .demo__link { position: absolute; left: calc(47.6% - 4px); top: 50%; width: 28px; height: 2px; background: var(--teal); }
+      .demo__link::before, .demo__link::after { content: ""; position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--white); box-shadow: inset 0 0 0 2px var(--teal); }
+      .demo__link::before { left: -5px; } .demo__link::after { right: -5px; }
+      .demo__link i { position: absolute; top: -1px; left: 0; width: 8px; height: 4px; background: var(--peach); opacity: 0; }
+      .demo__link.busy i { animation: hop 0.4s linear infinite; }
+      @keyframes hop { 0% { opacity: 1; left: 0; } 100% { opacity: 1; left: 20px; } }
+      .chat { display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+      .bubble { --cut: 8px; padding: 9px 12px; max-width: 95%; clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+      .bubble--you { align-self: flex-end; background: var(--ink); color: #fff; font-family: var(--mono); font-size: 12px; min-height: 2.6em; }
+      .bubble--you::after { content: "▍"; color: var(--peach-l); animation: caret 1s steps(1) infinite; }
+      .bubble--you.done::after { content: ""; }
+      .bubble--ai { background: var(--teal-wash); color: var(--ink); opacity: 0; transform: translateY(8px); transition: all 0.4s var(--ease); }
+      .bubble--ai.show { opacity: 1; transform: none; }
+      .bubble--ai b { display: block; font: 700 10px var(--mono); color: var(--teal-ink); text-transform: uppercase; }
+      .mini { --m: #f4906b; --m2: #ffefe6; position: relative; background: var(--m2); box-shadow: inset 0 0 0 1px rgb(11 42 48 / 0.15); padding: 10px; display: grid; gap: 8px; align-content: start; overflow: hidden; transition: background 0.5s; }
+      .mini > * { opacity: 0; clip-path: inset(0 100% 0 0); transition: opacity 0.2s, clip-path 0.45s steps(6); }
+      .mini.b1 .mini__nav, .mini.b2 .mini__hero, .mini.b3 .mini__cards, .mini.b4 .mini__live { opacity: 1; clip-path: inset(0 0 0 0); }
+      .mini__nav { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: var(--ink); }
+      .mini__nav span:last-child { display: flex; gap: 4px; } .mini__nav i { width: 16px; height: 4px; background: rgb(11 42 48 / 0.3); }
+      .mini__hero { padding: 14px 10px; background: var(--m); color: #fff; font-weight: 800; font-size: 15px; line-height: 1.1; }
+      .mini__hero small { display: block; margin-top: 6px; font-weight: 600; font-size: 9px; }
+      .mini__hero em { display: inline-block; margin-top: 8px; padding: 4px 8px; background: #fff; color: var(--ink); font-style: normal; font-size: 9px; }
+      .mini__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .mini__cards i { height: 40px; background: #fff; box-shadow: inset 0 -12px 0 var(--m); }
+      .mini__live { position: absolute; right: 8px; bottom: 8px; padding: 3px 8px; background: var(--ink); color: var(--teal-b); font: 700 10px var(--mono); }
+      .shorts { margin-top: 30px; }
+      .shorts h3 { margin: 0 0 10px; font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal-b); }
+      .shorts__row { list-style: none; margin: 0; padding: 0 0 6px; display: grid; grid-auto-flow: column; grid-auto-columns: 116px; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+      .short { scroll-snap-align: start; position: relative; aspect-ratio: 9 / 16; overflow: hidden; background: var(--white); color: var(--ink); --c1: 20px; transition: transform 0.3s var(--ease); }
+      .short:nth-child(3n + 2) { background: var(--peach); color: var(--deep); }
+      .short:nth-child(3n + 3) { background: var(--teal-b); color: var(--deep); }
+      .short:hover { transform: translateY(-4px); }
+      .short__ph { position: absolute; inset: 0; padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; }
+      .short__tag { margin: 0; position: absolute; top: 10px; left: 10px; font: 700 10px var(--mono); text-transform: uppercase; opacity: 0.7; }
+      .short__title { margin: 0; font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+      .short__soon { margin: 0; font: 700 10px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
+      .short .play { width: 44px; height: 44px; inset: 0 0 34% 0; background: var(--ink); color: #fff; }
+      .more { display: inline-block; margin-top: 8px; font: 700 12px var(--mono); color: var(--teal-b); text-decoration: none; }
+      .more:hover { text-decoration: underline; }
+
+      /* ---------- 03 lessons ---------- */
+      #lessons .board { left: 0; top: 46%; bottom: 0; width: 52%; }
+      .picker { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 16px 0 34px; padding: 0 0 22px; list-style: none; }
+      .picker::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--teal); }
+      .picker li { position: relative; }
+      .picker li::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 22px; background: var(--teal); }
+      .bus { position: absolute; bottom: -4px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--peach); box-shadow: 0 0 0 4px rgb(244 144 107 / 0.3); left: calc((var(--lesson, 0) + 0.5) / 6 * 100%); transition: left 0.6s var(--ease); }
+      .pick { --cut: 12px; width: 100%; appearance: none; border: 0; cursor: pointer; text-align: left; padding: 12px 14px; background: var(--teal-wash); color: var(--ink-2);
+        clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); transition: background 0.3s ease, transform 0.3s var(--ease), color 0.3s ease; }
+      .pick:hover { background: #cdeee9; color: var(--ink); transform: translateY(-3px); }
+      .pick b { display: block; font: 700 22px/1 var(--mono); color: var(--teal-ink); margin-bottom: 4px; }
+      .pick span { font-size: 13px; font-weight: 600; }
+      .pick[aria-selected="true"] { background: var(--ink); color: #fff; transform: translateY(-3px); }
+      .pick[aria-selected="true"] b { color: var(--peach-l); }
+      .lesson { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(28px, 4vw, 56px); align-items: start; --frame: var(--peach); }
+      .lesson.swap .video { animation: scan 0.6s steps(8) both; }
+      @keyframes scan { from { clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); } }
+      .lesson.swap > *:nth-child(2) { animation: swap 0.55s var(--ease) 0.06s both; }
+      @keyframes swap { from { opacity: 0; transform: translateX(18px); } }
+      .lesson h3 { margin: 0 0 8px; font-size: clamp(22px, 2.6vw, 32px); line-height: 1.12; }
+      .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; font: 700 12px var(--mono); color: var(--ink-2); }
+      .status { padding: 3px 10px; background: var(--teal-b); color: var(--deep); text-transform: uppercase; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+      .lesson p { margin: 0 0 14px; color: var(--ink-2); }
+      .kit { list-style: none; margin: 0; padding: 14px 16px; background: #f4f9f9; color: var(--ink); display: grid; gap: 8px; font-size: 14px; --c1: 20px; }
+      .kit li { display: flex; justify-content: space-between; gap: 12px; }
+      .kit small { color: var(--ink-2); }
+      .kit .price { font-family: var(--mono); font-size: 13px; color: var(--peach-ink); font-weight: 700; text-align: right; white-space: nowrap; }
+      .kit .total { border-top: 2px dashed rgb(11 42 48 / 0.2); padding-top: 8px; font-weight: 800; }
+      .lesson .btns { margin-top: 18px; }
+
+      /* ---------- 04 how: steps wired in a snake ---------- */
+      #how .board { left: 0; right: 0; top: 50%; bottom: 0; }
+      .plan-wrap { position: relative; margin-top: 26px; }
+      .snake { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+      .snake path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .snake__line { stroke: var(--teal-b); stroke-width: 3; }
+      .snake__sig { stroke: var(--peach); stroke-width: 7; stroke-dasharray: 5 200; stroke-dashoffset: 5; }
+      .panel.is-on .snake__sig { animation: snake 6s linear 0.6s infinite; }
+      @keyframes snake { 0% { stroke-dashoffset: 5; } 45% { stroke-dashoffset: -100; } 100% { stroke-dashoffset: -100; } }
+      .plan { position: relative; z-index: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px 40px; }
+      .plan li:nth-child(4) { grid-row: 2; grid-column: 3; } .plan li:nth-child(5) { grid-row: 2; grid-column: 2; } .plan li:nth-child(6) { grid-row: 2; grid-column: 1; }
+      .plan li { position: relative; padding: 18px 20px; background: var(--white); --c1: 22px; box-shadow: inset 0 0 0 2px var(--ink); }
+      .plan li:nth-child(even) { background: var(--peach-wash); }
+      .plan__n { font: 700 13px var(--mono); color: var(--peach-ink); }
+      .plan__box { position: absolute; top: 16px; right: 20px; width: 26px; height: 26px; display: grid; place-items: center; background: #fff; box-shadow: inset 0 0 0 2px var(--ink); transition: background 0.2s; transition-delay: calc(0.6s + var(--i) * 0.54s); }
+      .plan__box svg { opacity: 0; transform: scale(0.3); transition: all 0.3s var(--ease); transition-delay: calc(0.6s + var(--i) * 0.54s); }
+      .panel.is-on .plan__box { background: var(--teal-b); }
+      .panel.is-on .plan__box svg { opacity: 1; transform: none; }
+      .plan h3 { margin: 6px 0 4px; font-size: 18px; }
+      .plan p { margin: 0; color: var(--ink-2); font-size: 14px; }
+      .margin-note { position: relative; z-index: 2; margin: 22px 0 0; font: 700 30px/1.1 var(--hand); color: var(--peach-l); transform: rotate(-1.5deg); transform-origin: left; }
+
+      /* ---------- 05 join: traces converge on the logo ---------- */
+      #join .board { left: 0; top: 0; bottom: 0; width: 40%; }
+      .join { display: grid; grid-template-columns: 0.72fr 1fr; gap: clamp(28px, 6vw, 96px); align-items: center; }
+      .core { position: relative; display: grid; place-items: center; aspect-ratio: 1; max-width: 340px; width: 100%; margin: 0 auto; }
+      .core svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .core path { fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1.2s var(--ease) 0.3s; }
+      .panel.is-on .core path { stroke-dashoffset: 0; }
+      .core .s { stroke-width: 2.6; stroke-dasharray: 6 200; stroke-dashoffset: 6; transition: none; }
+      .panel.is-on .core .s { animation: sig 1.8s linear infinite; animation-delay: var(--dl); }
+      .core__chip { position: relative; z-index: 1; width: 36%; aspect-ratio: 1; padding: 6%; background: var(--deep); box-shadow: 0 0 0 3px var(--teal-b); clip-path: polygon(18% 0, 100% 0, 100% 82%, 82% 100%, 0 100%, 0 18%); animation: hum 1.8s ease-in-out infinite; }
+      .core__chip img { width: 100%; height: 100%; object-fit: contain; }
+      @keyframes hum { 50% { box-shadow: 0 0 0 3px var(--peach); } }
+      .core__cap { position: absolute; bottom: -8px; left: 0; right: 0; text-align: center; font: 700 12px var(--mono); color: var(--teal-b); text-transform: uppercase; }
+      .signup { margin: 26px 0 0; max-width: 560px; padding: 24px; background: var(--white); --c1: 28px; box-shadow: inset 0 0 0 2px var(--ink); }
+      .signup h3 { margin: 0 0 2px; font-size: 19px; }
+      .signup__sub { margin: 0 0 14px; font-size: 13px; color: var(--ink-2); }
+      .signup__row { display: flex; gap: 8px; }
+      .signup input[type="email"] { flex: 1; min-width: 0; min-height: 50px; padding: 0 16px; border: 0; box-shadow: inset 0 -3px 0 var(--ink); background: var(--cream); color: var(--ink); font: 400 15px var(--mono); clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px); }
+      .signup input[type="email"]:focus { outline: none; box-shadow: inset 0 -4px 0 var(--teal-ink); background: #fff; }
+      .signup input[aria-invalid="true"] { box-shadow: inset 0 -4px 0 var(--peach-ink); }
+      .signup__status { margin: 10px 0 0; min-height: 1.4em; font: 700 13px var(--mono); color: var(--peach-ink); }
+      .signup__status.is-done { color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+      .hp { position: absolute; left: -9999px; }
+      .shake { animation: shake 0.4s; }
+      @keyframes shake { 25% { transform: translateX(-6px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
+      .fine { margin: 22px 0 0; max-width: 62ch; font-size: 12px; color: var(--ink-2); }
+      .fine a { color: var(--ink); font-weight: 700; }
+
+      /* ---------- guide: a node chain ---------- */
+      .guide { position: relative; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 0 var(--gut); background: var(--white); border-top: 2px solid var(--ink); }
+      .guide__btn { justify-self: start; appearance: none; background: none; border: 0; color: var(--ink-2); cursor: pointer; font: 700 13px var(--mono); padding: 10px 4px; display: inline-flex; gap: 8px; align-items: center; }
+      .guide__btn:hover { color: var(--ink); }
+      .guide__btn[hidden] { display: inline-flex; visibility: hidden; }
+      .guide__btn--next { --cut: 10px; justify-self: end; padding: 10px 18px; background: var(--peach); color: var(--deep); font: 700 14px var(--sans); white-space: nowrap; clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); transition: background 0.2s; }
+      .guide__btn--next:hover { background: var(--peach-l); color: var(--deep); }
+      .guide__btn--next .arr { transition: transform 0.3s var(--ease); }
+      .guide__btn--next:hover .arr { transform: translateX(4px); }
+      .dots { display: flex; align-items: center; }
+      .dot { position: relative; width: 40px; height: 16px; padding: 0; border: 0; background: none; cursor: pointer; }
+      .dot:first-child { width: 16px; }
+      .dot::before { content: ""; position: absolute; left: 0; right: 14px; top: 7px; height: 2px; background: rgb(11 42 48 / 0.2); transition: background 0.4s; }
+      .dot::after { content: ""; position: absolute; right: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--white); box-shadow: inset 0 0 0 2px rgb(11 42 48 / 0.35); transition: all 0.3s; }
+      .dot.is-done::before, .dot[aria-current="step"]::before { background: var(--teal); }
+      .dot.is-done::after { background: var(--teal); box-shadow: none; }
+      .dot[aria-current="step"]::after { background: var(--peach); box-shadow: 0 0 0 4px rgb(244 144 107 / 0.3); }
+      .dot:hover::after { box-shadow: inset 0 0 0 2px var(--ink); }
+
+      /* ---------- responsive ---------- */
+      @media (max-width: 1080px) { .tab b { display: none; } .tab { padding: 10px 12px; } }
+      @media (max-width: 1000px) {
+        .hero, .split, .lesson, .join { grid-template-columns: 1fr; }
+        .hero__media { max-width: 560px; margin-right: 16px; }
+        .plan { grid-template-columns: 1fr 1fr; }
+        .plan li:nth-child(n) { grid-row: auto; grid-column: auto; }
+        .snake { display: none; }
+        .panel { align-content: start; }
+        .board { --k: 28px; }
+        .core { max-width: 240px; }
+      }
+      @media (max-width: 760px) {
+        :root { --head-h: 108px; }
+        .head { flex-wrap: wrap; align-content: center; gap: 8px; padding-block: 8px; }
+        .head__logo img { width: 36px; height: 36px; padding: 4px; }
+        .tabs { margin-left: 0; width: 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { font-size: 13px; flex: 1 0 auto; }
+        .picker { grid-template-columns: repeat(3, 1fr); padding-bottom: 0; }
+        .picker::before, .picker li::after, .bus { display: none; }
+        .plan { grid-template-columns: 1fr; }
+        .signup__row { flex-direction: column; }
+        .guide__label--prev { display: none; }
+        .guide__btn--next #next-label { font-size: 0; } .guide__btn--next #next-label::before { content: "Next"; font-size: 14px; }
+        .dot { width: 26px; }
+        .sticker { width: 88px; height: 88px; font-size: 10px; top: -26px; right: -14px; } .sticker b { font-size: 20px; }
+        .demo__body { grid-template-columns: 1fr; } .demo__link { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+        .panel { transform: none !important; }
+        .wire { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <symbol id="ico-play" viewBox="0 0 24 24"><path d="M8 5.5v13a.6.6 0 0 0 .9.5l10.2-6.5a.6.6 0 0 0 0-1L8.9 5a.6.6 0 0 0-.9.5z" fill="currentColor" /></symbol>
+      <symbol id="ico-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#071a1f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+    </svg>
+
+    <div class="app">
+      <header class="head">
+        <a class="head__logo" href="#start" data-go="start" aria-label="Vibe Shop Class, start"><img src="vsc-icon.png" alt="" width="44" height="44" /><span class="head__word"><span>Vibe Shop</span>Class</span></a>
+        <div class="tabs" role="tablist" aria-label="Sections">
+          <span class="tabs__mark" aria-hidden="true"></span>
+          <button class="tab" role="tab" id="tab-start" aria-controls="start" data-go="start"><b>01</b>Start</button>
+          <button class="tab" role="tab" id="tab-vibe" aria-controls="vibe" data-go="vibe"><b>02</b>Vibe coding</button>
+          <button class="tab" role="tab" id="tab-lessons" aria-controls="lessons" data-go="lessons"><b>03</b>Lessons</button>
+          <button class="tab" role="tab" id="tab-how" aria-controls="how" data-go="how"><b>04</b>How it works</button>
+          <button class="tab" role="tab" id="tab-join" aria-controls="join" data-go="join"><b>05</b>Get the lessons</button>
+        </div>
+        <span class="head__progress" aria-hidden="true"></span>
+      </header>
+
+      <main class="stage" id="stage">
+        <!-- 01 START -->
+        <section class="panel" id="start" role="tabpanel" aria-labelledby="tab-start" data-next="See what vibe coding is">
+          <div class="board board--r" data-seed="11" aria-hidden="true"><svg></svg></div>
+          <div class="wrap hero">
+            <div>
+              <p class="eyebrow rise" style="--d:0">Shop class for the AI era</p>
+              <h1 class="display rise" style="--d:1">Build <span class="hl">real</span><br /><span class="cycle" data-words="things|websites|apps|stores|books">things</span></h1>
+              <p class="hand rise" style="--d:2">with Claude</p>
+              <p class="lede rise" style="--d:3">Websites, apps, stores, books and systems. You bring the idea, Claude does the heavy lifting. Every lesson is the shortest path from idea to done, explained in plain words.</p>
+              <div class="btns rise" style="--d:4">
+                <button class="btn" data-go="lessons" data-lesson="1">Start with Lesson 1</button>
+                <button class="btn btn--line" data-go="lessons">See all lessons</button>
+              </div>
+              <ul class="proof rise" style="--d:5"><li><b>6</b> lessons</li><li><b>8</b> steps each</li><li>No code required</li><li>Prices checked Oct 2026</li></ul>
+            </div>
+            <div class="hero__media rise" style="--d:3">
+              <p class="hero__note" aria-hidden="true">start here ↘</p>
+              <div class="sticker" aria-hidden="true"><span><b>$0</b>code<br />written</span></div>
+              <div class="frame">
+                <div class="video" data-video="ep1" data-label="Lesson 1: Build a website with Claude">
+                  <img src="thumb_ep1.jpg" alt="Lesson 1 thumbnail: Build a website with Claude" width="1280" height="720" fetchpriority="high" />
+                  <span class="video__soon"><svg width="12" height="12"><use href="#ico-play" /></svg>Premieres soon on YouTube</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ticker" aria-hidden="true">
+            <div class="ticker__row">
+              <span><i></i>Websites</span><span><i></i>iPhone apps</span><span><i></i>Social apps</span><span><i></i>Novels</span><span><i></i>Project plans</span><span><i></i>Online stores</span><span><i></i>No code required</span>
+              <span><i></i>Websites</span><span><i></i>iPhone apps</span><span><i></i>Social apps</span><span><i></i>Novels</span><span><i></i>Project plans</span><span><i></i>Online stores</span><span><i></i>No code required</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 02 VIBE CODING -->
+        <section class="panel" id="vibe" role="tabpanel" aria-labelledby="tab-vibe" data-next="Pick a lesson">
+          <div class="board board--r" data-seed="23" aria-hidden="true"><svg></svg></div>
+          <div class="wrap split">
+            <div>
+              <p class="eyebrow rise" style="--d:0">What vibe coding is</p>
+              <h2 class="h2 rise" style="--d:1">You <span class="hl hl--peach">describe</span>.<br />AI builds.</h2>
+              <p class="lede rise" style="--d:2">You don't need to be a coder anymore. Describe what you want in plain words and Claude writes the code, explains it and fixes it when something breaks. You stay the designer, the decision maker and the owner.</p>
+              <ol class="steps">
+                <li class="rise" style="--d:3"><span class="steps__n">01</span><div><h3>Describe it</h3><p>Say what you want like you'd tell a friend. Claude turns it into a plan, then working code.</p></div></li>
+                <li class="rise" style="--d:4"><span class="steps__n">02</span><div><h3>Build it in 8 steps</h3><p>A short checklist, with jargon (domain, DNS, registrar) explained the first time.</p></div></li>
+                <li class="rise" style="--d:5"><span class="steps__n">03</span><div><h3>Ship it</h3><p>Real web addresses, app stores and storefronts. Every price shown before you spend a cent.</p></div></li>
+              </ol>
+              <div class="tip cut-1 rise" style="--d:6"><strong>Stuck? Screenshot it and ask Claude.</strong>Send Claude a screenshot of whatever you're looking at and ask what to click next.</div>
+            </div>
+            <div class="on-board">
+              <div class="demo-wrap rise" style="--d:3"><div class="demo cut-1" aria-label="Example: you describe a site and Claude builds it" role="img"><div class="demo__in cut-1">
+                <div class="demo__bar" aria-hidden="true"><i></i><i></i><i></i><span>you + Claude</span></div>
+                <div class="demo__body" aria-hidden="true">
+                  <div class="chat">
+                    <div class="bubble bubble--you" id="demo-you"></div>
+                    <div class="bubble bubble--ai" id="demo-ai"><b>Claude</b><span></span></div>
+                  </div>
+                  <span class="demo__link" id="demo-link"><i></i></span>
+                  <div class="mini" id="demo-mini">
+                    <div class="mini__nav"><span id="demo-brand">Brightside</span><span><i></i><i></i><i></i></span></div>
+                    <div class="mini__hero"><span id="demo-title">Fresh bread, every morning</span><small id="demo-sub">Order by 8 pm, pick up at 7 am</small><em>Order now</em></div>
+                    <div class="mini__cards"><i></i><i></i><i></i></div>
+                    <span class="mini__live">● LIVE</span>
+                  </div>
+                </div>
+              </div></div></div>
+              <div class="shorts rise" style="--d:5">
+                <h3>Quick hits from Lesson 1</h3>
+                <ul class="shorts__row">
+                  <li class="short cut-1" data-short="s1" data-out="1792684800000" data-label="Short: I built this website in minutes. Zero code."><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">I built this website in minutes. Zero code.</p><p class="short__soon">Out Thu, Oct 22</p></div></li>
+                  <li class="short cut-1" data-short="s2" data-out="1792857600000" data-label="Short: This site went live in seconds. Hosting: $0"><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">This site went live in seconds. Hosting: $0</p><p class="short__soon">Out Sat, Oct 24</p></div></li>
+                  <li class="short cut-1" data-short="s3" data-out="1793030400000" data-label="Short: Stuck on any website? Do this."><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">Stuck on any website? Do this.</p><p class="short__soon">Out Mon, Oct 26</p></div></li>
+                  <li class="short cut-1" data-short="s4" data-out="1793203200000" data-label="Short: She built this website in one evening"><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">She built this website in one evening</p><p class="short__soon">Out Wed, Oct 28</p></div></li>
+                  <li class="short cut-1" data-short="s5" data-out="1793376000000" data-label="Short: One Google Drive folder, every AI"><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">One Google Drive folder, every AI</p><p class="short__soon">Out Fri, Oct 30</p></div></li>
+                  <li class="short cut-1" data-short="s6" data-out="1793552400000" data-label="Short: Site looks off on phones? Just say so"><div class="short__ph"><p class="short__tag">Short</p><p class="short__title">Site looks off on phones? Just say so</p><p class="short__soon">Out Sun, Nov 1</p></div></li>
+                </ul>
+                <a class="more" href="https://www.youtube.com/@vibeshopclass/shorts" target="_blank" rel="noopener">More Shorts on YouTube →</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 03 LESSONS -->
+        <section class="panel" id="lessons" role="tabpanel" aria-labelledby="tab-lessons" data-next="How every lesson works">
+          <div class="board board--l" data-seed="37" aria-hidden="true"><svg></svg></div>
+          <div class="wrap">
+            <p class="eyebrow rise" style="--d:0">Season 1</p>
+            <h2 class="h2 rise" style="--d:1"><span class="hl">Six</span> lessons, one rhythm</h2>
+            <ul class="picker rise" style="--d:2" role="tablist" aria-label="Season 1 lessons" id="picker"></ul>
+            <div class="lesson rise" style="--d:3" id="lesson" role="tabpanel" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <!-- 04 HOW IT WORKS -->
+        <section class="panel" id="how" role="tabpanel" aria-labelledby="tab-how" data-next="Get each new lesson">
+          <div class="board board--b" data-seed="53" aria-hidden="true"><svg></svg></div>
+          <div class="wrap">
+            <p class="eyebrow rise" style="--d:0">How every lesson works</p>
+            <h2 class="h2 rise" style="--d:1">The same <span class="hl">lesson plan</span>, every time</h2>
+            <p class="lede rise" style="--d:2">Written for a beginner, paced for a busy person. Jargon gets explained the first time it shows up, and every price is shown before you spend anything.</p>
+            <div class="plan-wrap rise" style="--d:3">
+              <svg class="snake" id="snake" aria-hidden="true"><path class="snake__line" pathLength="100" /><path class="snake__sig" pathLength="100" /></svg>
+              <ol class="plan">
+                <li style="--i:0"><span class="plan__n">01</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>The hook</h3><p>See the finished thing first.</p></li>
+                <li style="--i:1"><span class="plan__n">02</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>Your kit</h3><p>Every tool, with its price.</p></li>
+                <li style="--i:2"><span class="plan__n">03</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>Eight steps</h3><p>Always the shortest path.</p></li>
+                <li style="--i:3"><span class="plan__n">04</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>Click paths</h3><p>Shown every time you leave Claude.</p></li>
+                <li style="--i:4"><span class="plan__n">05</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>Five easy mistakes</h3><p>So you skip them.</p></li>
+                <li style="--i:5"><span class="plan__n">06</span><span class="plan__box"><svg width="16" height="16"><use href="#ico-check" /></svg></span><h3>The review</h3><p>So it sticks.</p></li>
+              </ol>
+            </div>
+            <p class="margin-note rise" style="--d:6">Claude does the heavy lifting. The ideas are yours.</p>
+          </div>
+        </section>
+
+        <!-- 05 JOIN -->
+        <section class="panel" id="join" role="tabpanel" aria-labelledby="tab-join">
+          <div class="board board--l" data-seed="71" aria-hidden="true"><svg></svg></div>
+          <div class="wrap join">
+            <div class="core rise" style="--d:1" aria-hidden="true">
+              <svg viewBox="0 0 136 136">
+                <path d="M0 20 H30 l20 20 H68 V50" stroke="#3ad1c5" pathLength="100" />
+                <path d="M0 116 H24 l18 -18 H50 V86" stroke="#f4906b" pathLength="100" />
+                <path d="M136 10 V30 l-20 20 H86 V58" stroke="#3ad1c5" pathLength="100" />
+                <path d="M136 126 H110 l-20 -20 V86 H86" stroke="#f4906b" pathLength="100" />
+                <path class="s" d="M0 20 H30 l20 20 H68 V50" stroke="#ffb38a" pathLength="100" style="--dl:0s" />
+                <path class="s" d="M0 116 H24 l18 -18 H50 V86" stroke="#3ad1c5" pathLength="100" style="--dl:-0.45s" />
+                <path class="s" d="M136 10 V30 l-20 20 H86 V58" stroke="#ffb38a" pathLength="100" style="--dl:-0.9s" />
+                <path class="s" d="M136 126 H110 l-20 -20 V86 H86" stroke="#3ad1c5" pathLength="100" style="--dl:-1.35s" />
+              </svg>
+              <div class="core__chip"><img src="vsc-icon.png" alt="" width="80" height="80" /></div>
+              <span class="core__cap">● you, connected</span>
+            </div>
+            <div>
+              <p class="eyebrow rise" style="--d:0">Get started</p>
+              <h2 class="h2 rise" style="--d:1">Your first build is <span class="hl hl--peach">9 minutes</span> away.</h2>
+              <p class="lede rise" style="--d:2">New lesson every few weeks, Shorts in between.</p>
+              <div class="btns rise" style="--d:3">
+                <button class="btn" data-go="lessons" data-lesson="1">Start Lesson 1</button>
+                <a class="btn btn--line" href="https://www.youtube.com/@vibeshopclass?sub_confirmation=1" target="_blank" rel="noopener">Subscribe on YouTube</a>
+              </div>
+              <div class="signup rise" style="--d:4" data-source="join-tab">
+                <form novalidate aria-labelledby="su-head">
+                  <h3 id="su-head">Get each new lesson in your inbox</h3>
+                  <p class="signup__sub">One email when a lesson drops. No spam, unsubscribe anytime.</p>
+                  <div class="signup__row">
+                    <input id="su-email" aria-label="Email address" type="email" name="email" placeholder="you@email.com" autocomplete="email" inputmode="email" required aria-describedby="su-status" />
+                    <button class="btn" type="submit">Send me the lessons</button>
+                  </div>
+                  <div class="hp" aria-hidden="true"><label for="su-hp">Leave this field empty</label><input id="su-hp" type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+                </form>
+                <p class="signup__status" id="su-status" role="status" aria-live="polite"></p>
+              </div>
+              <p class="fine rise" style="--d:5">Vibe Shop Class · A <a href="https://terriusinc.com" target="_blank" rel="noopener">Terrius</a> company. Examples in every lesson are made up (Brightside Bakery, Sprout, Trailmates, Northbound Tees). Prices checked Oct 2026. Vibe Shop Class is independent and is not sponsored by, endorsed by or affiliated with Anthropic, the maker of Claude.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="guide" aria-label="Step through the site">
+        <button class="guide__btn" id="prev" type="button"><span aria-hidden="true">←</span><span class="guide__label--prev" id="prev-label">Back</span><span class="sr">Previous section</span></button>
+        <div class="dots" id="dots"></div>
+        <button class="guide__btn guide__btn--next" id="next" type="button"><span id="next-label">Next</span><span class="arr" aria-hidden="true">→</span></button>
+      </nav>
+    </div>
+
+    <svg class="wire is-hidden" id="wire" aria-hidden="true"><path class="wire__line" pathLength="100" /><path class="wire__sig" pathLength="100" /><circle class="wire__a" r="5" /><circle class="wire__b" r="5" /></svg>
+
+    <script>
+      /* ===== Paste YouTube IDs here (the part after watch?v= or /shorts/). Leave "" until a video is live. ===== */
+      const VIDEOS = { ep1: "Orm5WmaQtLQ", ep2: "", ep3: "", ep4: "", ep5: "", ep6: "" };
+      const SHORTS = { s1: "lT0iCHMU_bA", s2: "GoR5XJiq2l8", s3: "PgdSOtP3zTw", s4: "CbW_zuwvopE", s5: "ErY8XG_sIT4", s6: "zyGhwOygGlg" };
+      const CHANNEL_URL = "https://www.youtube.com/@vibeshopclass";
+      const SUBSCRIBE_URL = "https://mpdxxfwgrgevsbkuehcp.supabase.co/rest/v1/rpc/vsc_subscribe";
+      const SUPABASE_KEY = "sb_publishable_I8b3ETq7AyHfuU0mkMBOmw_so7-Jl50";
+      /* ========================================================================================================= */
+
+      const LESSONS = [
+        { n: 1, tab: "Website", title: "Build a website with Claude", time: "9:01", vid: "ep1",
+          text: "A real website for a bakery, live on its own web address. It costs nothing to host, and no one wrote a line of code by hand. In eight steps you'll name your site, design it by describing it, build it with Claude, put it online with Netlify and connect your own domain.",
+          kit: [["Claude Pro", "design and building", "$20/month"], ["Google Drive", "keeps your files together", "Free"], ["Netlify", "puts the site online", "Free"], ["A domain", "your own web address", "About $10–20/year"]], total: "$20/month" },
+        { n: 2, tab: "iPhone app", title: "Build an iPhone app with Claude", time: "8:10", vid: "ep2",
+          text: "Meet Sprout, a real iPhone app with accounts, saved data and reminders. You'll design it, build it with Expo and Supabase, run it on your own phone and get it ready for the App Store.",
+          kit: [["Claude Pro", "", "$20/month"], ["Expo", "", "Free"], ["Supabase", "", "Free"], ["Netlify", "", "Free"], ["Apple Developer Program", "only when you publish", "$99/year"]] },
+        { n: 3, tab: "Social app", title: "Build a social app with Claude", time: "8:07", vid: "ep3",
+          text: "Trailmates is a social network for a hiking club, with profiles, photos, likes and comments, running on iPhone and the web from one project.",
+          note: "Same kit as the app lesson, so if you did Lesson 2 you're already set up." },
+        { n: 4, tab: "Novel", title: "Write a novel with Claude", time: "8:10", vid: "ep4",
+          text: "A world, a plot, a first chapter, a cover and a plan to publish, built with AI as a partner. The story stays yours; Claude keeps the whole book straight.",
+          kit: [["Claude Pro", "", "$20/month"], ["Google Drive and Docs", "", "Free"], ["Amazon Kindle Direct Publishing", "", "Free to start"]] },
+        { n: 5, tab: "Plan", title: "Plan your projects with Claude", time: "8:04", vid: "ep5",
+          text: "Three projects, one plan: every step, every cost and every decision date, already on your calendar. Connect Drive, Gmail and Calendar and Claude builds the plan from files it finds on its own.",
+          kit: [["Claude Pro", "", "$20/month"], ["Three Google connectors", "", "Free"]] },
+        { n: 6, tab: "Store", title: "Launch a store with Claude", time: "8:02", vid: "ep6",
+          text: "A T-shirt brand with its own store and no stock in a garage: each shirt is printed when someone orders it. You'll name the brand, design the shirts, open the store and connect your domain.",
+          kit: [["Claude Pro", "", "$20/month"], ["Fourthwall", "store, printing, shipping", "Free"], ["A domain", "", "About $10–20/year"], ["Google Drive", "", "Free"]] },
+      ];
+      const DEMOS = [
+        { ask: "A website for my bakery. Warm, friendly, easy to order.", reply: "On it. Warm peach colors, a big order button, and your hours up top.", brand: "Brightside", title: "Fresh bread, every morning", sub: "Order by 8 pm, pick up at 7 am", m: "#f4906b", m2: "#ffefe6" },
+        { ask: "A T-shirt store for my hiking club.", reply: "Done. Outdoorsy greens, three launch designs, printed when someone orders.", brand: "Northbound Tees", title: "Wear the trail", sub: "Printed to order, shipped in 5 days", m: "#2f8f5b", m2: "#e6f4ea" },
+        { ask: "An app that reminds me to water my plants.", reply: "Here's Sprout: a plant list, watering reminders and a weekly streak.", brand: "Sprout", title: "Your plants, on schedule", sub: "3 plants need water today", m: "#0a7a72", m2: "#e3f6f4" },
+      ];
+
+      (function () {
+        const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const clean = (id) => String(id || "").trim().replace(/[^\w-]/g, "");
+        const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+        const pad = (n) => String(n).padStart(2, "0");
+
+        /* ---------- circuit boards: traces in 45° steps, like the logo art, with signals running along them ---------- */
+        /* on small screens each board sits behind that tab's main visual instead of a fixed share of the screen */
+        const ANCHOR = { start: ".hero__media", vibe: ".on-board", lessons: ".lesson .frame", how: ".plan-wrap", join: ".core" };
+        const small = matchMedia("(max-width: 1000px)");
+        function placeBoard(p) {
+          const b = p.querySelector(".board"); if (!b) return;
+          if (!small.matches) { b.removeAttribute("style"); return; }
+          const a = p.querySelector(ANCHOR[p.id]); if (!a) return;
+          const pr = p.getBoundingClientRect(), ar = a.getBoundingClientRect();
+          b.style.cssText = "top:" + Math.round(ar.top - pr.top + p.scrollTop - 34) + "px;bottom:auto;height:" + Math.round(ar.height + 52) + "px;left:0;right:0;width:auto";
+        }
+        function rng(seed) { let s = seed || 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+        function buildBoard(board) {
+          const w = board.clientWidth, h = board.clientHeight; if (!w || !h) return;
+          const svg = board.querySelector("svg"), r = rng(+board.dataset.seed);
+          const step = 30; let out = "", o = 0;
+          for (let y = 26; y < h - 14; y += step) {
+            if (r() < 0.3) continue;
+            const left = r() < 0.5, s = left ? 1 : -1, x0 = left ? 0 : w;
+            const rise = (r() < 0.5 ? -1 : 1) * step * (r() < 0.6 ? 0.5 : 1);
+            const x1 = x0 + s * (30 + r() * w * 0.4), x2 = x1 + s * Math.abs(rise), y2 = y + rise;
+            let x3 = x2 + s * (24 + r() * w * 0.3); x3 = Math.max(14, Math.min(w - 14, x3));
+            if ((x3 - x2) * s < 10 || y2 < 8 || y2 > h - 8) continue;
+            const d = "M" + x0 + " " + y + " H" + x1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2 + " H" + x3.toFixed(1);
+            const peach = r() < 0.22, t = (2.6 + r() * 3.4).toFixed(2), dl = (-r() * 6).toFixed(2);
+            out += '<path class="tr' + (peach ? " tr--p" : "") + '" pathLength="100" d="' + d + '" style="--o:' + o++ + '"/>';
+            if (!calm && r() < 0.75) out += '<path class="sig' + (peach ? " sig--p" : "") + '" pathLength="100" d="' + d + '" style="--t:' + t + "s;--dl:" + dl + 's"/>';
+            out += '<circle class="nd' + (peach ? " nd--p" : "") + '" r="4" cx="' + x3.toFixed(1) + '" cy="' + y2 + '" style="--t:' + t + "s;--dl:" + dl + 's"/>';
+          }
+          svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+          svg.innerHTML = out;
+        }
+
+        /* ---------- decode effect on highlighted words ---------- */
+        const GLYPHS = "01<>/_#$%&*+=";
+        function decode(el) {
+          if (calm) return;
+          const final = el.dataset.text || (el.dataset.text = el.textContent);
+          let f = 0; clearInterval(el._t);
+          el._t = setInterval(() => {
+            f++;
+            const done = Math.floor(f / 2);
+            el.textContent = final.split("").map((c, k) => (k < done || c === " " ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0])).join("");
+            if (done >= final.length) { clearInterval(el._t); el.textContent = final; }
+          }, 45);
+        }
+
+        /* ---------- snake wire for the lesson plan ---------- */
+        function buildSnake() {
+          const wrap = document.querySelector(".plan-wrap"), svg = document.getElementById("snake");
+          const items = [...wrap.querySelectorAll(".plan li")]; if (!items.length || getComputedStyle(svg).display === "none") return;
+          const wr = wrap.getBoundingClientRect(); if (!wr.width) return;
+          const pts = items.map((li) => { const r = li.getBoundingClientRect(); return [r.left - wr.left + r.width / 2, r.top - wr.top + r.height / 2]; });
+          let d = "M" + pts[0].join(" ");
+          for (let k = 1; k < pts.length; k++) {
+            const [x, y] = pts[k], [px, py] = pts[k - 1];
+            d += Math.abs(y - py) > 4 ? " V" + y : " H" + x;
+          }
+          svg.setAttribute("viewBox", "0 0 " + wr.width + " " + wr.height);
+          svg.querySelectorAll("path").forEach((p) => p.setAttribute("d", d));
+        }
+
+        /* ---------- video slots ---------- */
+        function play(slot, id) {
+          const f = document.createElement("iframe");
+          f.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0";
+          f.title = slot.dataset.label || "YouTube video";
+          f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+          f.allowFullscreen = true;
+          f.referrerPolicy = "strict-origin-when-cross-origin";
+          slot.replaceChildren(f);
+          f.focus();
+        }
+        function arm(slot, id, size, isShort) {
+          if (!id) return;
+          const soon = slot.querySelector(".video__soon, .short__soon");
+          if (soon && !isShort) soon.remove();
+          if (soon && isShort) soon.textContent = "Watch the Short";
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "play";
+          b.setAttribute("aria-label", "Play " + (slot.dataset.label || "video"));
+          b.innerHTML = '<svg width="' + size + '" height="' + size + '" aria-hidden="true"><use href="#ico-play" /></svg>';
+          b.addEventListener("click", () => play(slot, id));
+          slot.appendChild(b);
+          slot._play = () => play(slot, id);
+        }
+        const armVideos = (root) => root.querySelectorAll("[data-video]").forEach((s) => arm(s, clean(VIDEOS[s.dataset.video]), 28, false));
+        armVideos(document);
+        document.querySelectorAll("[data-short]").forEach((s) => { s._ph = s.querySelector(".short__ph").outerHTML; if (Date.now() >= (Number(s.dataset.out) || 0)) arm(s, clean(SHORTS[s.dataset.short]), 18, true); });
+        const stopVideos = (root) => root.querySelectorAll("iframe").forEach((f) => {
+          const slot = f.parentElement, key = slot.dataset.video || slot.dataset.short;
+          if (slot.dataset.video) { slot.innerHTML = '<img src="thumb_' + key + '.jpg" alt="" width="1280" height="720" />'; arm(slot, clean(VIDEOS[key]), 28, false); }
+          else { slot.innerHTML = slot._ph; arm(slot, clean(SHORTS[key]), 18, true); }
+        });
+
+        /* ---------- lesson picker on a data bus ---------- */
+        const picker = document.getElementById("picker"), lessonEl = document.getElementById("lesson");
+        picker.innerHTML = LESSONS.map((l) => '<li><button class="pick" role="tab" id="pick-' + l.n + '" aria-controls="lesson" data-lesson="' + l.n + '"><b>' + pad(l.n) + "</b><span>" + l.tab + "</span></button></li>").join("") + '<span class="bus" aria-hidden="true"></span>';
+        const picks = [...picker.querySelectorAll(".pick")];
+        let curLesson = 0;
+        function showLesson(n, animate) {
+          const l = LESSONS[n - 1]; if (!l) return;
+          curLesson = n;
+          picker.style.setProperty("--lesson", n - 1);
+          picks.forEach((p) => { const on = +p.dataset.lesson === n; p.setAttribute("aria-selected", on); p.tabIndex = on ? 0 : -1; });
+          lessonEl.setAttribute("aria-labelledby", "pick-" + n);
+          const kit = l.kit ? '<ul class="kit cut-1" aria-label="Your kit">' + l.kit.map((k) => "<li><span>" + esc(k[0]) + (k[1] ? " <small>" + esc(k[1]) + "</small>" : "") + '</span><span class="price">' + esc(k[2]) + "</span></li>").join("") + (l.total ? '<li class="total"><span>To start</span><span class="price">' + l.total + "</span></li>" : "") + "</ul>" : "";
+          const id = clean(VIDEOS[l.vid]);
+          lessonEl.innerHTML =
+            '<div class="frame"><div class="video" data-video="' + l.vid + '" data-label="Lesson ' + n + ": " + esc(l.title) + '"><img src="thumb_' + l.vid + '.jpg" alt="Lesson ' + n + " thumbnail: " + esc(l.title) + '" width="1280" height="720" />' +
+            (id ? "" : '<span class="video__soon"><svg width="12" height="12"><use href="#ico-play" /></svg>Premieres soon on YouTube</span>') + "</div></div>" +
+            '<div><div class="meta"><span>Lesson ' + pad(n) + '</span><span class="status">Ready</span><span>' + l.time + "</span></div>" +
+            "<h3>" + esc(l.title) + "</h3><p>" + esc(l.text) + "</p>" + (l.note ? "<p>" + esc(l.note) + "</p>" : "") + kit +
+            '<div class="btns">' + (id ? '<button class="btn" data-play-lesson><svg width="16" height="16" aria-hidden="true"><use href="#ico-play" /></svg>Watch Lesson ' + n + "</button>" : '<a class="btn" href="' + CHANNEL_URL + '" target="_blank" rel="noopener">Watch on YouTube</a>') +
+            (n < LESSONS.length ? '<button class="btn btn--line" data-lesson-next>Lesson ' + pad(n + 1) + " →</button>" : '<button class="btn btn--line" data-go="join">Get new lessons →</button>') +
+            "</div></div>";
+          armVideos(lessonEl);
+          if (typeof placeBoard === "function" && lessonEl.closest(".panel").classList.contains("is-on")) placeBoard(lessonEl.closest(".panel"));
+          if (animate && !calm) { lessonEl.classList.remove("swap"); void lessonEl.offsetWidth; lessonEl.classList.add("swap"); }
+        }
+        picker.addEventListener("click", (e) => { const p = e.target.closest(".pick"); if (p) { showLesson(+p.dataset.lesson, true); setHash(); } });
+        picker.addEventListener("keydown", (e) => {
+          const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return;
+          e.preventDefault(); e.stopPropagation();
+          const n = ((curLesson - 1 + d + LESSONS.length) % LESSONS.length) + 1; showLesson(n, true); picks[n - 1].focus(); setHash();
+        });
+        lessonEl.addEventListener("click", (e) => {
+          if (e.target.closest("[data-play-lesson]")) { const s = lessonEl.querySelector(".video"); if (s && s._play) s._play(); }
+          if (e.target.closest("[data-lesson-next]")) { showLesson(curLesson + 1, true); setHash(); }
+        });
+
+        /* ---------- demo: type an idea, a signal crosses, the site builds ---------- */
+        const demo = { you: document.getElementById("demo-you"), ai: document.getElementById("demo-ai"), mini: document.getElementById("demo-mini"), link: document.getElementById("demo-link") };
+        let demoTimers = [], demoI = 0;
+        const later = (fn, ms) => demoTimers.push(setTimeout(fn, ms));
+        function stopDemo() { demoTimers.forEach(clearTimeout); demoTimers = []; demo.link.classList.remove("busy"); }
+        function runDemo() {
+          stopDemo();
+          const d = DEMOS[demoI % DEMOS.length];
+          document.getElementById("demo-brand").textContent = d.brand; document.getElementById("demo-title").textContent = d.title; document.getElementById("demo-sub").textContent = d.sub;
+          demo.mini.style.setProperty("--m", d.m); demo.mini.style.setProperty("--m2", d.m2);
+          demo.ai.querySelector("span").textContent = d.reply;
+          if (calm) { demo.you.textContent = d.ask; demo.you.classList.add("done"); demo.ai.classList.add("show"); demo.mini.className = "mini b1 b2 b3 b4"; return; }
+          demo.you.textContent = ""; demo.you.classList.remove("done"); demo.ai.classList.remove("show"); demo.mini.className = "mini";
+          let t = 500;
+          for (let i = 1; i <= d.ask.length; i++) later(() => (demo.you.textContent = d.ask.slice(0, i)), (t += 36));
+          later(() => demo.you.classList.add("done"), (t += 200));
+          later(() => demo.ai.classList.add("show"), (t += 450));
+          later(() => demo.link.classList.add("busy"), (t += 250));
+          ["b1", "b2", "b3", "b4"].forEach((c) => later(() => demo.mini.classList.add(c), (t += 420)));
+          later(() => demo.link.classList.remove("busy"), t + 200);
+          later(() => { demoI++; runDemo(); }, t + 2800);
+        }
+
+        /* ---------- sections ---------- */
+        const panels = [...document.querySelectorAll(".panel")], ids = panels.map((p) => p.id);
+        const tabs = [...document.querySelectorAll(".tab")], mark = document.querySelector(".tabs__mark");
+        const progress = document.querySelector(".head__progress");
+        const dots = document.getElementById("dots");
+        const tabName = (i) => tabs[i].textContent.replace(/^\d+/, "");
+        dots.innerHTML = panels.map((p, i) => '<button class="dot" type="button" aria-label="Go to ' + tabName(i) + '" data-go="' + p.id + '"></button>').join("");
+        const dotEls = [...dots.children];
+        const prev = document.getElementById("prev"), next = document.getElementById("next");
+        const prevLabel = document.getElementById("prev-label"), nextLabel = document.getElementById("next-label");
+        let cur = -1;
+
+        /* the wire: from the tab you picked, down into the section it opens */
+        const wire = document.getElementById("wire"), wLine = wire.querySelector(".wire__line"), wSig = wire.querySelector(".wire__sig"), wA = wire.querySelector(".wire__a"), wB = wire.querySelector(".wire__b");
+        let wireT;
+        function drawWire(i, animate) {
+          clearTimeout(wireT);
+          wire.classList.add("is-hidden"); wire.classList.remove("go");
+          if (calm) return;
+          wireT = setTimeout(() => {
+            const tab = tabs[i], eb = panels[i] && panels[i].querySelector(".eyebrow");
+            if (!tab || !eb || panels[i].scrollTop > 8) return;
+            const tr = tab.getBoundingClientRect(), er = eb.getBoundingClientRect(), hb = document.querySelector(".head").getBoundingClientRect().bottom;
+            const x0 = Math.round(tr.left + tr.width / 2), y0 = Math.round(hb), x1 = Math.round(er.left + 6), y1 = Math.round(er.top + er.height / 2 - 6);
+            const k = Math.min(26, y1 - y0 - 10);
+            if (k < 6 || er.top < hb) return;
+            const yh = y1 - k, dir = x1 < x0 ? -1 : 1;
+            const d = "M" + x0 + " " + y0 + " V" + yh + " H" + (x1 - dir * k) + " L" + x1 + " " + y1;
+            wLine.setAttribute("d", d); wSig.setAttribute("d", d);
+            wA.setAttribute("cx", x0); wA.setAttribute("cy", y0 + 1); wB.setAttribute("cx", x1); wB.setAttribute("cy", y1);
+            void wire.getBoundingClientRect();
+            wire.classList.remove("is-hidden"); wire.classList.add(animate ? "go" : "go");
+          }, animate ? 780 : 60);
+        }
+
+        function moveMark() {
+          const t = tabs[cur]; if (!t) return;
+          mark.style.width = t.offsetWidth + "px";
+          mark.style.transform = "translateX(" + t.offsetLeft + "px)";
+          const bar = t.parentElement;
+          if (bar.scrollWidth > bar.clientWidth) bar.scrollTo({ left: t.offsetLeft - (bar.clientWidth - t.offsetWidth) / 2, behavior: calm ? "auto" : "smooth" });
+        }
+        function setHash() {
+          const h = "#" + ids[cur] + (ids[cur] === "lessons" && curLesson > 1 ? "-" + curLesson : "");
+          if (location.hash !== h) history.pushState(null, "", h);
+        }
+        function go(i, opts) {
+          opts = opts || {};
+          if (i < 0 || i >= panels.length) return;
+          if (i === cur) { if (opts.focus) panels[i].focus({ preventScroll: true }); return; }
+          const dir = cur < 0 ? 1 : i > cur ? 1 : -1;
+          panels.forEach((p, j) => {
+            p.style.setProperty("--dir", dir);
+            if (j === cur) { p.classList.remove("is-on"); p.classList.add("is-off"); stopVideos(p); setTimeout(() => p.classList.remove("is-off"), 650); }
+            else if (j !== i) p.classList.remove("is-on", "is-off");
+            p.setAttribute("aria-hidden", j === i ? "false" : "true");
+            p.inert = j !== i;
+          });
+          const p = panels[i];
+          p.classList.remove("is-off"); p.scrollTop = 0;
+          placeBoard(p);
+          const b = p.querySelector(".board"); if (b) buildBoard(b);
+          void p.offsetWidth; p.classList.add("is-on");
+          cur = i;
+          if (ids[i] === "vibe") runDemo(); else stopDemo();
+          if (ids[i] === "how") requestAnimationFrame(buildSnake);
+          p.querySelectorAll(".hl").forEach((el) => setTimeout(() => decode(el), 300));
+          tabs.forEach((t, j) => { t.setAttribute("aria-selected", j === i); t.tabIndex = j === i ? 0 : -1; });
+          dotEls.forEach((d, j) => { d.classList.toggle("is-done", j < i); j === i ? d.setAttribute("aria-current", "step") : d.removeAttribute("aria-current"); });
+          moveMark();
+          drawWire(i, true);
+          progress.style.transform = "scaleX(" + (i + 1) / panels.length + ")";
+          prev.hidden = i === 0; next.hidden = i === panels.length - 1;
+          prevLabel.textContent = i > 0 ? tabName(i - 1) : "";
+          nextLabel.textContent = p.dataset.next || "Next";
+          document.title = (i === 0 ? "" : tabName(i) + " · ") + (document.body.dataset.title || "Vibe Shop Class: build real things with AI");
+          if (opts.push !== false) setHash();
+          if (opts.focus) p.focus({ preventScroll: true });
+        }
+        panels.forEach((p) => { p.tabIndex = -1; p.addEventListener("scroll", () => { if (p.scrollTop > 8) wire.classList.add("is-hidden"); }, { passive: true }); });
+
+        document.addEventListener("click", (e) => {
+          const a = e.target.closest("[data-go]"); if (!a) return;
+          e.preventDefault();
+          if (a.dataset.lesson) showLesson(+a.dataset.lesson, cur === ids.indexOf("lessons"));
+          go(ids.indexOf(a.dataset.go), { focus: !a.classList.contains("tab") && !a.classList.contains("dot") });
+          if (a.dataset.lesson) setHash();
+        });
+        prev.addEventListener("click", () => go(cur - 1));
+        next.addEventListener("click", () => go(cur + 1));
+
+        document.addEventListener("keydown", (e) => {
+          if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+          const el = document.activeElement;
+          if (el && (el.matches("input, textarea, select, iframe") || el.isContentEditable)) return;
+          const onTab = el && el.classList.contains("tab");
+          if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(cur + 1); if (onTab) tabs[cur].focus(); }
+          if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(cur - 1); if (onTab) tabs[cur].focus(); }
+          if (e.key === "Home" && onTab) { e.preventDefault(); go(0); tabs[0].focus(); }
+          if (e.key === "End" && onTab) { e.preventDefault(); go(panels.length - 1); tabs[cur].focus(); }
+        });
+
+        let sx = 0, sy = 0, st = 0, track = false;
+        const stage = document.getElementById("stage");
+        stage.addEventListener("touchstart", (e) => { const t = e.touches[0]; track = !e.target.closest(".shorts__row, .picker, iframe"); sx = t.clientX; sy = t.clientY; st = Date.now(); }, { passive: true });
+        stage.addEventListener("touchend", (e) => {
+          if (!track) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+          if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - st < 700) go(cur + (dx < 0 ? 1 : -1));
+        }, { passive: true });
+
+        // deep links: #start #vibe #lessons #lessons-3 #how #join (+ the old site's #lesson-N, #signup, #lesson-bar)
+        function fromHash() {
+          let h = location.hash.slice(1);
+          const m = h.match(/^lessons?-(\d)$/);
+          if (m) { showLesson(+m[1], false); h = "lessons"; }
+          if (h === "signup") h = "join";
+          if (h === "lesson-bar") h = "lessons";
+          const i = ids.indexOf(h);
+          go(i < 0 ? 0 : i, { push: false });
+        }
+        addEventListener("popstate", fromHash);
+        let rt;
+        addEventListener("resize", () => { moveMark(); clearTimeout(rt); rt = setTimeout(() => { placeBoard(panels[cur]); const b = panels[cur].querySelector(".board"); if (b) buildBoard(b); buildSnake(); drawWire(cur, false); }, 150); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { moveMark(); buildSnake(); });
+        showLesson(1, false);
+        fromHash();
+
+        /* ---------- hero word typewriter ---------- */
+        const cy = document.querySelector(".cycle");
+        if (cy && !calm) {
+          const words = cy.dataset.words.split("|"); let w = 0;
+          const type = (word, n) => { cy.textContent = word.slice(0, n); if (n < word.length) setTimeout(() => type(word, n + 1), 70); else setTimeout(erase, 1800); };
+          const erase = () => { const t = cy.textContent; if (t.length) { cy.textContent = t.slice(0, -1); setTimeout(erase, 40); } else { w = (w + 1) % words.length; type(words[w], 1); } };
+          setTimeout(erase, 2200);
+        }
+      })();
+
+      /* ===== Email signup (same Supabase RPC as the live site) ===== */
+      (function () {
+        const BAD = "That email doesn't look right.";
+        const OOPS = "Something went wrong. Try again in a moment.";
+        const EMAIL_RE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+        document.querySelectorAll(".signup").forEach((box) => {
+          const form = box.querySelector("form"), input = box.querySelector('input[type="email"]'), btn = box.querySelector('button[type="submit"]');
+          const hp = box.querySelector(".hp input"), status = box.querySelector(".signup__status"), label = btn.textContent;
+          const say = (msg) => { status.classList.remove("is-done"); status.textContent = msg; const row = box.querySelector(".signup__row"); if (msg && !matchMedia("(prefers-reduced-motion: reduce)").matches) { row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake"); } };
+          const fail = (msg, invalid) => { say(msg); if (invalid) input.setAttribute("aria-invalid", "true"); input.focus(); };
+          const done = () => {
+            form.hidden = true; status.classList.add("is-done");
+            status.innerHTML = '<span>You’re in. Lesson 1 is waiting for you.</span><button class="btn" data-go="lessons" data-lesson="1">Start Lesson 1</button>';
+            status.tabIndex = -1; status.focus({ preventScroll: true });
+          };
+          input.addEventListener("input", () => { if (input.hasAttribute("aria-invalid")) { input.removeAttribute("aria-invalid"); status.textContent = ""; } });
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (btn.disabled) return;
+            if (hp && hp.value) { done(); return; }
+            const email = input.value.trim();
+            if (!EMAIL_RE.test(email)) { fail(BAD, true); return; }
+            btn.disabled = true; btn.textContent = "Sending…"; form.setAttribute("aria-busy", "true"); status.textContent = "";
+            try {
+              const res = await fetch(SUBSCRIBE_URL, { method: "POST", headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ p_email: email, p_source: box.dataset.source }) });
+              if (res.ok) { done(); return; }
+              let msg = "";
+              try { const text = await res.text(); try { const j = JSON.parse(text); msg = [j.message, j.error, j.details, j.hint, j.msg].filter(Boolean).join(" "); } catch (_) { msg = text; } } catch (_) {}
+              fail(/invalid email/i.test(msg) ? BAD : OOPS, /invalid email/i.test(msg));
+            } catch (err) {
+              fail(OOPS, false);
+            } finally {
+              btn.disabled = false; btn.textContent = label; form.removeAttribute("aria-busy");
+            }
+          });
+        });
+      })();
+    </script>
+    <script data-goatcounter="https://vibeshopclass.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  </body>
+</html>

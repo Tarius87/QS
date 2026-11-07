@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unsubscribe · Vibe Shop Class</title><meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#163a40;color:#fff;font-family:Poppins,system-ui,sans-serif}
+.card{max-width:440px;margin:24px;padding:36px 32px;background:#2c565c;border-radius:18px;text-align:center}
+h1{font-size:24px;margin:0 0 12px}p{line-height:1.6;color:#e6f4f2}a{color:#3ad1c5}.peach{color:#ffb38a}</style></head>
+<body><div class="card"><h1 id="h">Unsubscribing…</h1><p id="p">One moment.</p><p><a href="/">Back to Vibe Shop Class</a></p></div>
+<script>
+(async()=>{const h=document.getElementById('h'),p=document.getElementById('p');
+const t=new URLSearchParams(location.search).get('t')||'';
+if(!/^[0-9a-f-]{36}$/i.test(t)){h.textContent='Link not recognized';p.textContent='This unsubscribe link looks incomplete. Use the link at the bottom of any Vibe Shop Class email.';return;}
+try{const r=await fetch('https://mpdxxfwgrgevsbkuehcp.supabase.co/rest/v1/rpc/vsc_unsubscribe',{method:'POST',headers:{apikey:'sb_publishable_I8b3ETq7AyHfuU0mkMBOmw_so7-Jl50','Content-Type':'application/json'},body:JSON.stringify({t})});
+const ok=r.ok&&(await r.json())===true;
+if(ok){h.textContent="You're unsubscribed";p.innerHTML='You won\u2019t get any more Vibe Shop Class emails. <span class="peach">Lessons stay free on YouTube.</span>';}
+else{h.textContent='Link not recognized';p.textContent='We couldn\u2019t find that subscription. It may already be removed.';}}
+catch(e){h.textContent='Something went wrong';p.textContent='Please try the link again in a minute.';}})();
+</script></body></html>
